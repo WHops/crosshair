@@ -1,0 +1,48 @@
+# WHoeps, 13th Aug 2024
+
+I am here describing plot_plusminus_hprc.R
+
+At the moment (2:51 PM) the script takes as inputs:
+
+
+- (1) paf (more on that later)
+- (2) SD.bed
+- (3) genes.bed
+- (4) chunklen of paf
+
+And some hardcoded values: 
+- (5) limit: 20
+- (6) chrx_startcoord what we have to add to x to get the SD.bed and genes.bed numbers (they are in real coordinates)
+
+The script then creates one of those plots as in example.png
+
+Now for the different input files: 
+
+
+(1) paf:
+(1.1) Know your input coordinates. I got them with nahrwhals, and then e.g.: 
+
+cd /mnt/c/Users/Z364220/projects/mini-programs/crosshair/data/HPRC
+bedtools getfasta -fi /home/hoeps/turbo_mount_3/data/research/projects/wolfram/programs/agc/data/genomes/HG00621.2.fa -bed <(echo -e "seq66\t43754602\t49782859") > HG00621.2_region.fa
+
+(1.2) Then use the script in scripts. Put here the chunklen; default is 10.000
+
+cd /mnt/c/Users/Z364220/projects/mini-programs/crosshair
+./scripts/align_parent_to_child.sh data/HPRC/HG01978.2_region.fa data/HPRC/HG00621.2_region.fa 10000 > HG01978.2_HG00621.2_100.paf
+
+
+(2) SD.bed.
+I made this with: 
+
+cd /mnt/c/Users/Z364220/projects/data/segdups/hg38
+mkdir simple_bed
+cd simple_bed
+open IGV, find the SDs i want to include
+vim 15q13_ABC.bed; put in entries manually.
+
+(3) genes.bed
+I made this with: 
+
+cd /mnt/c/Users/Z364220/projects/data/genomes/hg38/15q13_golgas
+bedtools intersect -a <(echo -e "chr15\t28000000\t34000000") -b <(grep -e "GOLGA8" -e "OTUD7A" -e "CHRNA7" hg38_genes.bed) -wb | cut -f 4-7 > 15q13_GOLGA.bed
+
