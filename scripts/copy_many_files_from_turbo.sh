@@ -22,8 +22,6 @@ sscp /ifs/data/research/projects/wolfram/mini-programs/local_readpull_assembly/t
 mkdir data/trio3
 mkdir data/trio3/child
 mkdir data/trio3/father
-#sscp /ifs/data/research/projects/wolfram/mini-programs/local_readpull_assembly/trio_on_steroids/stable_res_hifi024_a1/res_15q13_trio3/hifiasm_a1/fastas/chr15-20000000-50000000_child_h2.fa data/trio3/child/
-#sscp /ifs/data/research/projects/wolfram/mini-programs/local_readpull_assembly/trio_on_steroids/stable_res_hifi024_a1/res_15q13_trio3/hifiasm_a1/fastas/chr15-20000000-50000000_child_h2.fa.fai data/trio3/child/
 sscp /ifs/data/research/projects/wolfram/mini-programs/local_readpull_assembly/trio_on_steroids/stable_res_hifi024_a1/res_15q13_trio3/hifiasm/fastas/chr15-20000000-50000000_child.hap2.fa data/trio3/child/
 sscp /ifs/data/research/projects/wolfram/mini-programs/local_readpull_assembly/trio_on_steroids/stable_res_hifi024_a1/res_15q13_trio3/hifiasm/fastas/chr15-20000000-50000000_child.hap2.fa.fai data/trio3/child/
 sscp /ifs/data/research/projects/wolfram/mini-programs/local_readpull_assembly/trio_on_steroids/stable_res_hifi024/res_15q13_trio3/hifiasm/fastas/chr15-20000000-50000000_father_putigs.fa data/trio3/father/
@@ -45,7 +43,6 @@ mkdir data/trio6/mother
 sscp /ifs/data/research/projects/wolfram/mini-programs/local_readpull_assembly/trio_on_steroids/stable_res_hifi024/res_15q13_trio6/hifiasm/fastas/chr15-20000000-50000000_child_h1.fa data/trio6/child
 sscp /ifs/data/research/projects/wolfram/mini-programs/local_readpull_assembly/trio_on_steroids/stable_res_hifi024/res_15q13_trio6/hifiasm/fastas/chr15-20000000-50000000_child_h1.fa.fai data/trio6/child
 sscp /ifs/data/research/projects/wolfram/mini-programs/local_readpull_assembly/trio_on_steroids/stable_res_hifi024/res_15q13_trio6/hifiasm/fastas/chr15-20000000-50000000_mother_putigs.fa data/trio6/mother
-
 
 # Trio 7
 mkdir data/trio7
@@ -79,8 +76,10 @@ trio6   h1tg000004l:6242148-8567462
 trio7   h1tg000004l:5290446-7611250
 trio8   h2tg000004l:6781460-10930083
 trio10  h2tg000012l:17035945-21174381
+# Trio2+Trio4: no coords; all alignments
 
 mkdir res/trio1_paf
+mkdir res/trio2_paf
 mkdir res/trio3_paf
 mkdir res/trio6_paf
 mkdir res/trio7_paf
@@ -104,6 +103,5 @@ mkdir res/trio4_paf
 
 # Run trio 4
 ./scripts/align_parent_to_child.sh data/trio4/child/chr15-20000000-50000000_child.hap1.fa data/trio4/mother/chr15-20000000-50000000_mother.bp.p_utg.fa 1000 all > res/trio4_paf/trio4.paf
-
 # Run trio 2
 ./scripts/align_parent_to_child.sh data/trio2/child/chr15-20000000-50000000_child_h1.fa data/trio2/mother/chr15-20000000-50000000_mother_putigs.fa 1000 all > res/trio2_paf/trio2.paf

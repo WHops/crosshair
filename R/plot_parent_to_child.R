@@ -49,12 +49,12 @@ read_paf <- function(file) {
   return(paf_df)
 }
 
-determine_wellmapping_utigs <- function(paf_data, min_fract_perfect, min_n_perfect) {
+determine_wellmapping_utigs <- function(paf_data, min_fract_perfect, min_number_perfect_mapping_seq_chunks) {
   valid_queries <- paf_data %>%
     group_by(queryname) %>%
     summarise(total = n(), zero_nm = sum(nm == 0)) %>%
     filter(zero_nm >= total * min_fract_perfect) %>%
-    filter(zero_nm >= min_n_perfect) %>%
+    filter(zero_nm >= min_number_perfect_mapping_seq_chunks) %>%
     pull(queryname)
   
   return(valid_queries)
@@ -130,106 +130,187 @@ detect_extrema <- function(conv_result, window_size, detection_threshold) {
   }
 }
 
-n=6
-paf_file = paste0('../res/trio',n,'_paf/trio',n,'.paf')
-seqname_x = paste0('Trio',n,'_child')
-crossover_detection_window_size <- 100
-extremum_detection_threshold <- (crossover_detection_window_size / 2) * 0.8
+
+### RUN ###
+### ================================
+### USER SETTINGS
+### ================================
+
+# ---- Input ----
+paf_file <- #/your/paf/file
+seqname_x <- #sequence_name_of_sequence_to_put_on_x
+
+# ---- Filtering parameters ----
+min_fraction_perfect_mapping_seq_chunks <- 0.2 # Default
+min_number_perfect_mapping_seq_chunks <- 0 # Default
+
+# ---- Breakpoint detection settings ----
+breakpoint_detection <- TRUE
+breakpoint_detection_convolution_windowsize_in_chunks <- 50 # Default
+extremum_detection_threshold <- breakpoint_detection_convolution_windowsize_in_chunks / 3 # Default
+
+# ---- Plot settings ----
+plot_initial <- TRUE
+plot_with_breakpoints <- TRUE
+
+# ---- Debug ----
+debug_mode <- FALSE
+
+
+### ================================
+### DATA LOADING & PREPROCESSING
+### ================================
 
 paf_data <- read_paf(paf_file)
-#target='h1tg0000004l'
-#query='utg000217l'
-#paf_data = paf_data[paf_data$target == target,]
-#paf_data = paf_data[paf_data$queryname == query,]
-valid_queries <- determine_wellmapping_utigs(paf_data, 0.2,1) #0.5, 5)#0.5, 5)
-length(valid_queries)
-paf_data <- paf_data %>% filter(queryname %in% valid_queries)
-paf_data <- annotate_utig_starts_ends(paf_data)
 
-# sort paf by nm
-paf_data = paf_data[order(paf_data$nm, decreasing=T),]
+valid_queries <- determine_wellmapping_utigs(
+  paf_data,
+  min_fraction_perfect_mapping_seq_chunks,
+  min_number_perfect_mapping_seq_chunks
+)
+
+paf_data <- paf_data %>%
+  filter(queryname %in% valid_queries) %>%
+  annotate_utig_starts_ends()
+
+# Sort by mismatch count
+paf_data <- paf_data[order(paf_data$nm, decreasing = TRUE), ]
 paf_data$threshold <- "no"
-breakpoints = c()
-plot_paf(paf_data, seqname_x)
+
+if (plot_initial) {
+  plot_paf(paf_data, xlabel = seqname_x)
+}
 
 
-all_utigs <- unique(paf_data$queryname)
-for (utig_to_analyse in all_utigs){
-  # Filter, group by querystart, and sort the dataframe
-  filtered_data <- paf_data %>%
-    filter(queryname == utig_to_analyse) %>%
-    group_by(querystart) %>%
-    slice_min(nm, with_ties = FALSE) %>%
-    ungroup() %>%
-    arrange(querystart)
+### ================================
+### BREAKPOINT DETECTION
+### ================================
 
-  # Extract the 'nm' column as a vector
-  nm_vector <- filtered_data$nm
-  nm_vector[nm_vector > 1] <- 1
+breakpoints <- c()
 
-  # Find the edges using the convolution function
-  conv_result <- find_edges_convolution(nm_vector, crossover_detection_window_size)
-
-  # Detect extrema
-  extrema_index <- detect_extrema(conv_result, crossover_detection_window_size, extremum_detection_threshold)
-
-  # if (utig_to_analyse == 'utg000153l'){
-  #   # Plotting
-  #   plot(1:length(nm_vector), nm_vector, type = "p", col = "blue", main = "NM Vector", xlab = "Index", ylab = "NM")
-  #   if (!is.null(extrema_index)) {
-  #     abline(v = extrema_index + (crossover_detection_window_size/2), col = "red", lty = 2)
-  #   }
-  # 
-  #   plot(1:length(conv_result), conv_result, type = "l", col = "green", main = "Convolution Result", xlab = "Index", ylab = "Convolution")
-  #   if (!is.null(extrema_index)) {
-  #     abline(v = extrema_index, col = "red", lty = 2)
-  #   }
-  #   
-  # }
-  # Translate to query and target coordinates
-  if (!is.null(extrema_index)) {
-    breakpoint_index <- extrema_index + floor(crossover_detection_window_size / 2)
-    breakpoints <- c(breakpoints, filtered_data$target_start[breakpoint_index])
+if (breakpoint_detection) {
+  
+  all_utigs <- unique(paf_data$queryname)
+  
+  # Iterate over parental mapped chunks from unitigs. 
+  # Convolutino with a 000111... vector is used for edge detection.
+  for (utig_to_analyse in all_utigs) {
     
-    # Add a 'threshold' column to the original paf_data
-    paf_data$threshold[paf_data$queryname == utig_to_analyse & paf_data$querystart == filtered_data$querystart[breakpoint_index]] <- "yes"
+    filtered_data <- paf_data %>%
+      filter(queryname == utig_to_analyse) %>%
+      group_by(querystart) %>%
+      slice_min(nm, with_ties = FALSE) %>%
+      ungroup() %>%
+      arrange(querystart)
+    
+    nm_vector <- filtered_data$nm
+    nm_vector[nm_vector > 1] <- 1
+    
+    conv_result <- find_edges_convolution(
+      nm_vector,
+      breakpoint_detection_convolution_windowsize_in_chunks
+    )
+    
+    if (debug_mode) browser()
+    
+    extrema_index <- detect_extrema(
+      conv_result,
+      breakpoint_detection_convolution_windowsize_in_chunks,
+      extremum_detection_threshold
+    )
+    
+    if (!is.null(extrema_index)) {
+      
+      breakpoint_index <- extrema_index +
+        floor(breakpoint_detection_convolution_windowsize_in_chunks / 2)
+      
+      if (breakpoint_index <= nrow(filtered_data)) {
+        
+        bp <- filtered_data$target_start[breakpoint_index]
+        breakpoints <- c(breakpoints, bp)
+        
+        paf_data$threshold[
+          paf_data$queryname == utig_to_analyse &
+            paf_data$querystart ==
+            filtered_data$querystart[breakpoint_index]
+        ] <- "yes"
+      }
+    }
   }
 }
 
-# Plotting the PAF data with the inferred breakpoint
-plot_paf(paf_data, xlabel=seqname_x, breakpoints=breakpoints)
 
-print(paf_data[paf_data$threshold == 'yes',])
+### ================================
+### PLOTTING WITH BREAKPOINTS
+### ================================
 
-get_query_coord <- function(paf, target_seq, target_pos,query, pm_per_side) {
-  hits <- paf[startsWith(paf$queryname, query), ]
-  hits <- hits[grepl(target_seq, hits$target), ]
-  hits <- hits[hits$num_matching_bases > 995,]
-  if (nrow(hits) == 0) return(NULL)
-  i <- which.min(abs((hits$target_start + hits$target_end) / 2 - target_pos))
-  h <- hits[i, ]
-  #prop <- (target_pos - h$target_start) / (h$target_end - h$target_start)
-  #rel_query <- prop * (h$query_end - h$query_start)
-  
-  region_to_return=c(h$querystart - pm_per_side, h$queryend + pm_per_side)
-  #qc <- if (h$strand == "+") h$query_start + rel_query else h$queryend - rel_query
-  return(paste0(query, ':', region_to_return[1], '-', region_to_return[2],'_', h$strand))
+if (plot_with_breakpoints && length(breakpoints) > 0) {
+  plot_paf(
+    paf_data,
+    xlabel = seqname_x,
+    breakpoints = breakpoints
+  )
 }
 
-#breakpoints=c(56375)
-target='seq1'
-# Breakpoints
-#breakpoints=c(106384)
-target='h1tg000004l'
-extract_windowsize = 50000
-pm_per_side = (extract_windowsize - 1000) / 2
-# Match and extract
-matched <- grep(target, paf_data$target, value = TRUE)[1]
-start_num <- as.numeric(sub(paste0(".*", target, ":(\\d+)-.*"), "\\1", matched))
-start_num = 0
-
-paste0(target, ':', (breakpoints[1]+start_num)-pm_per_side, '-', (breakpoints[1]+start_num+1000)+pm_per_side, '_+')
-get_query_coord(paf_data, target, breakpoints[1], "utg000348l", pm_per_side)
-get_query_coord(paf_data, target, breakpoints[1], "utg000354l", pm_per_side)
+if (length(breakpoints) > 0) {
+  print(paf_data[paf_data$threshold == "yes", ])
+}
 
 
+### ================================
+### OPTIONAL: FLANK EXTRACTION
+### ================================
+
+# This code can be used to extract the breakpoint coordinates on
+# child (x) and parental unitig coordinates. 
+# It requires some manual tuning. 
+
+if (extract_flanks && length(breakpoints) > 0) {
+  
+  get_query_coord <- function(paf, target_seq, target_pos, query, pm_per_side) {
+    hits <- paf[startsWith(paf$queryname, query), ]
+    hits <- hits[grepl(target_seq, hits$target), ]
+    hits <- hits[hits$num_matching_bases > 995, ]
+    
+    if (nrow(hits) == 0) return(NULL)
+    
+    i <- which.min(abs((hits$target_start + hits$target_end) / 2 - target_pos))
+    h <- hits[i, ]
+    
+    region_to_return <- c(
+      h$querystart - pm_per_side,
+      h$queryend + pm_per_side
+    )
+    
+    return(
+      paste0(
+        query, ":",
+        region_to_return[1], "-",
+        region_to_return[2], "_",
+        h$strand
+      )
+    )
+  }
+  
+  start_num <- 0
+  
+  cat(
+    paste0(
+      target_seq, ":",
+      (breakpoints[1] + start_num) - pm_per_side, "-",
+      (breakpoints[1] + start_num + 1000) + pm_per_side,
+      "_+\n"
+    )
+  )
+}
+
+# ---- Flanking sequence extraction ---- #
+# Fill in your values here. Is usually quite usecase-specific, thus assumed manual. 
+extract_flanks <- FALSE
+target_seq <- "seq1"
+extract_windowsize <- 50000
+pm_per_side <- (extract_windowsize - 1000) / 2
+parental_utig_name = ###
+breakpoint_index_of_utig_in_questino = ###
+  
+get_query_coord(paf_data, target_seq, breakpoints[breakpoint_index_of_utig_in_questino], parental_utig_name, pm_per_side)
