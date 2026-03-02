@@ -73,3 +73,14 @@ This repository primarily documents and reproduces the breakpoint analyses perfo
 ## License
 
 See `LICENSE` for details.
+
+-----------------------------------------------------------------------
+
+## Contact
+
+wolfram.hops@radboudumc.nl
+
+## Citation
+
+bioRxiv link to be added soon
+
