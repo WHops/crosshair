@@ -137,11 +137,12 @@ detect_extrema <- function(conv_result, window_size, detection_threshold) {
 ### ================================
 
 # ---- Input ----
-paf_file <- #/your/paf/file
-seqname_x <- #sequence_name_of_sequence_to_put_on_x
+paf_file <- '../test-data/toy_HG002_to_hg38.paf'
+seqname_x <- 'chr15:25000000-40000000'
+extract_flanks <- FALSE
 
 # ---- Filtering parameters ----
-min_fraction_perfect_mapping_seq_chunks <- 0.2 # Default
+min_fraction_perfect_mapping_seq_chunks <- 0 # 0.2 # Default
 min_number_perfect_mapping_seq_chunks <- 0 # Default
 
 # ---- Breakpoint detection settings ----
@@ -306,11 +307,11 @@ if (extract_flanks && length(breakpoints) > 0) {
 
 # ---- Flanking sequence extraction ---- #
 # Fill in your values here. Is usually quite usecase-specific, thus assumed manual. 
-extract_flanks <- FALSE
-target_seq <- "seq1"
-extract_windowsize <- 50000
-pm_per_side <- (extract_windowsize - 1000) / 2
-parental_utig_name = ###
-breakpoint_index_of_utig_in_questino = ###
+#extract_flanks <- FALSE
+#target_seq <- "seq1"
+#extract_windowsize <- 50000
+#pm_per_side <- (extract_windowsize - 1000) / 2
+#parental_utig_name = ###
+#breakpoint_index_of_utig_in_questino = ###
   
-get_query_coord(paf_data, target_seq, breakpoints[breakpoint_index_of_utig_in_questino], parental_utig_name, pm_per_side)
+#get_query_coord(paf_data, target_seq, breakpoints[breakpoint_index_of_utig_in_questino], parental_utig_name, pm_per_side)
