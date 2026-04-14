@@ -52,6 +52,12 @@ Then run the script interactively.
 
 ------------------------------------------------------------------------
 
+## Example Data 
+
+Find an example .paf file (some HG002 contigs aligned to hg38) in test-data. The Rscript plot_parent_to_child is preconfigured to run this test case. This will recreate the plot in test-data/toy-output.pdf 
+
+------------------------------------------------------------------------
+
 ## Breakpoint Detection
 
 The R scrit optionally detects breakpoints automatically. Detection is performed via simple edge detection: the mapping score vector is convolved with a step-function kernel (000...111), and strong transitions are reported as candidate breakpoints (shown as red dashed lines in the plot). This provides an initial proxy for likely breakpoint positions that can then be manually reviewed. Usually there are a couple of false-positives; so the auto-inferred breakpoints should really only be considered as starting points.
